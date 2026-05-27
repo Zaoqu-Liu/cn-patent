@@ -1,54 +1,73 @@
-# 专利挖掘与交底书技能 — 产品说明（PRD 摘要）
+# cn-patent Product Notes
 
-## 1. 产品概述
+## Purpose
 
-本仓库为符合 [AgentSkills](https://agentskills.io) 习惯的 **Skill**：通过 `SKILL.md` 编排流程，`prompts/` 存放可引用的指令模板，`tools/` 预留可执行脚本扩展。
+`cn-patent` turns project evidence into a Chinese invention disclosure draft that can be reviewed by inventors, IP teams, and patent attorneys.
 
-**目标**：完成专利点挖掘 → 查新 → 技术交底书（脱敏模版）→ 内部自检与迭代修订。
+It focuses on:
 
-## 2. 用户流程
+- Chinese technical disclosure structure.
+- CNIPA-first prior-art search.
+- Technical problem / technical solution / technical effect reasoning.
+- Source-grounded drafting from project materials.
+- Markdown + Word delivery.
+- Traceable revision rounds.
 
+It does not provide legal conclusions, filing strategy, or attorney-reviewed claims.
+
+## User Journey
+
+```text
+Install skill
+  -> point the agent at project materials
+  -> convert Office files when needed
+  -> scan and summarize evidence
+  -> mine candidate patent points
+  -> run CNIPA-first prior-art search
+  -> draft disclosure
+  -> render diagrams and export Word
+  -> self-check quality gates
+  -> revise in new timestamped files when new material appears
 ```
-用户触发（自然语言 / 斜杠指令）
-        ↓
-Step 1  边界与输入（prompts/intake.md）
-        ↓
-Step 2  项目扫描（project_scan.md：.docx/.pptx 先转 MD；裸图目录可跳过）
-        ↓
-Step 3–4 候选专利点 + 融合选定（prompts/patent_points_analyzer.md）
-        ↓
-Step 5  联网查新（prior_art_search.md：**优先** tools 中国知局 epub 爬虫，失败再 WebSearch）
-        ↓
-Step 6  摘要预览与确认（prompts/disclosure_preview.md）
-        ↓
-Step 7  全文交底书（prompts/disclosure_builder.md + template_reference.md）
-        ↓
-Step 8  内部自检（prompts/disclosure_self_check.md）→ 修订后交付
-        ↓
-交付   用户产出目录下的 .md/.docx：**案件名 + 本地时间戳**（§7.3 第 5 点），**含首次定稿与每次迭代**，勿默认覆盖
-        ↓
-持续   意图为改已有稿时：补充材料（merger.md）/ 对话纠正（correction_handler.md）；规则同上；案件目录 **`交底书修订对话记录.md`** 逐条追加（含时间、用户说明摘要），见 `iteration_context.md`
-```
 
-## 3. 目录约定
+## Product Principles
 
-| 路径 | 说明 |
-|------|------|
-| `SKILL.md` | 唯一入口：触发条件、工具映射、步骤与 prompts 引用 |
-| `prompts/` | 分步脚本化说明，由 Agent `Read` 后执行 |
-| `tools/` | 可选脚本；含 `md_to_docx.py`、`docx_to_md.py`、`pptx_to_md.py`、`cnipa_epub_search.py`（查新一步；另 `cnipa_epub_crawler.py` / `cnipa_epub_parse.py`），见 `tools/README.md` |
-| `docs/` | PRD、架构学习笔记等 |
-| `outputs/` | 用户定稿导出目录；整目录由 `.gitignore` 忽略；可提交的脱敏范例放在 **`examples/`** |
-| `examples/` | 随仓库提交的**原材料**示例（如 `example_batch_job_scheduler/knowledge/`）；流程产出在 `outputs/` |
+1. **Evidence first**: every technical claim should trace back to source material, prior-art search, or explicit user input.
+2. **Chinese patent fit**: keep the T-P-E chain visible and check software/AI/data-processing cases for concrete technical means.
+3. **User control**: do not overwrite earlier drafts unless explicitly asked.
+4. **Graceful degradation**: if CNIPA tooling or Playwright is unavailable, continue with public web search and clearly state the degraded path.
+5. **Reviewability**: write Markdown, Word, rendered diagrams, and revision logs to stable paths.
 
-## 4. 约束
+## Core Deliverables
 
-- Office 原材料（Word/PPT）：使用本仓库 `tools/docx_to_md.py`、`tools/pptx_to_md.py` 转换后再扫描（见 `SKILL.md`）。
-- 交底书正文**不得**包含「自检清单」章节。
-- 脱敏要求见 `disclosure_builder.md` / `template_reference.md`。
-- 查新结论须写入第一章并与技术问题、方案呼应；渠道与著录细则见 `prompts/prior_art_search.md`。
-- 交底书定稿须**同时**交付 Markdown 与 Word；文件名 **`{案件名}_{YYYYMMDDHHmmss}`**（§7.3 第 5 点，含首次与迭代）；`tools/mermaid_render.py` 默认调用 `md_to_docx.py`；Word 失败时允许人工补转（见 `tools/README.md`）。
+| Deliverable | Rule |
+| --- | --- |
+| Markdown disclosure | `案件名_YYYYMMDDHHmmss.md` |
+| Word disclosure | same stem as Markdown, `.docx` |
+| Diagrams | mermaid source during drafting, PNG in final Markdown/Word |
+| Revision log | append to `交底书修订对话记录.md` during merge/correction |
+| Prior-art entries | verified public URL for each item in chapter 1.1 |
 
-## 5. 环境变量
+## Quality Gates
 
-在 Claude Code、OpenClaw 等环境中，常使用 **`CLAUDE_SKILL_DIR`** 指向技能根目录。使用 Cursor 打开本仓库时，该目录即仓库根目录。
+The workflow should reject weak patent points when they lack:
+
+- a technical problem grounded in prior art or engineering constraints;
+- a concrete technical solution;
+- a technical effect that follows from that solution;
+- implementation support in chapter 3 or chapter 6;
+- a prior-art distinction that is not defined with hindsight.
+
+See [references/cn-patent-quality.md](../references/cn-patent-quality.md).
+
+## Failure Modes To Surface
+
+- Office conversion dependencies missing.
+- CNIPA search dependency or browser missing.
+- CNIPA site unavailable or returns irrelevant/empty results.
+- Mermaid rendering fails.
+- Word export fails.
+- Public source URL cannot be verified.
+- User asks for legal conclusion rather than technical disclosure drafting.
+
+The agent should continue only when a safe fallback exists and should tell the user which path was used.

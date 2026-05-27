@@ -31,7 +31,7 @@
    pip install -r tools/requirements-cnipa.txt
    python -m playwright install chromium
    # Agent：对上一节每个检索单位各执行一次（示例仅展示首轮）
-   python3 ${CLAUDE_SKILL_DIR}/tools/cnipa_epub_search.py 词甲
+   python3 ${SKILL_DIR}/tools/cnipa_epub_search.py 词甲
    ```
 
    - **合并责任在 Agent**：每次调用解析 **stdout** 上**唯一一行** **`EPUB_HITS_JSON:`** 后的 JSON 数组；在推理中按 **`pub_number`** 为主键去重合并（无则 **`link`**，再否则可用标题前缀），得到**一份**总表后再写入查新笔记与 1.1。

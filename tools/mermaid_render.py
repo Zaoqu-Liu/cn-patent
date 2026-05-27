@@ -19,8 +19,10 @@
   # 默认在同目录生成 disclosure.docx；失败时 stderr 会给出可复制的 md_to_docx 命令
   python tools/mermaid_render.py -i draft.md -o out/disclosure.md --docx out/custom.docx
   python tools/mermaid_render.py -i draft.md -o disclosure.md --no-docx   # 仅 Markdown
+  python tools/mermaid_render.py -i draft.md -o disclosure.md --strict    # 定稿交付建议使用
 
 写出 .md 后**默认**调用 ``md_to_docx.py``；Word 失败不导致进程失败（退出码 0），并提示手动转换。
+使用 ``--strict`` 时，任何 mermaid 生图失败或 Word 生成失败都会返回非 0，适合最终交付前验证。
 """
 from __future__ import annotations
 
@@ -323,6 +325,11 @@ def main(argv: list[str] | None = None) -> int:
         help="不生成 Word，仅输出替换图片后的 Markdown",
     )
     p.add_argument(
+        "--strict",
+        action="store_true",
+        help="严格模式：任一 mermaid 生图失败或 Word 生成失败时返回非 0",
+    )
+    p.add_argument(
         "--mmdc-scale",
         type=float,
         default=2.0,
@@ -388,14 +395,20 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     if args.no_docx:
-        return 0
+        return 2 if args.strict and n_fail else 0
 
     docx_path = (
         args.docx.resolve()
         if args.docx is not None
         else out_path.with_suffix(".docx")
     )
-    try_write_docx(out_path, docx_path)
+    docx_ok = try_write_docx(out_path, docx_path)
+
+    if args.strict:
+        if n_fail:
+            return 2
+        if not docx_ok:
+            return 3
 
     return 0
 

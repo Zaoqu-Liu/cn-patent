@@ -32,7 +32,7 @@
 - 与 **Step 7 首次定稿**为**同一命名规则**（凡落盘交付均带时间戳），详见 **`disclosure_builder.md` §7.3 第 5 点**。  
 - 旧版 `.md`/`.docx` 保留在同目录，便于对照（用户明确要求覆盖时再覆盖）。
 
-版本历史依赖**同目录下多个带时间戳的文件**，不需要 `iterations/` 子目录或快照脚本。
+修订历史依赖**同目录下多个带时间戳的文件**，不需要 `iterations/` 子目录或快照脚本。
 
 ### 修订对话记录（单独 Markdown，必做）
 
@@ -51,7 +51,7 @@
 **推荐**：在写出交付文件并生成 Word 之后，执行 **`Bash`**：
 
 ```text
-python3 ${CLAUDE_SKILL_DIR}/tools/iteration_dialog_log.py --case-dir "{案件目录}" --kind merge --user "{用户说明摘要}" --summary "{摘要摘录}" --artifacts "{案件名_时间戳.md},{案件名_时间戳.docx}"
+python3 ${SKILL_DIR}/tools/iteration_dialog_log.py --case-dir "{案件目录}" --kind merge --user "{用户说明摘要}" --summary "{摘要摘录}" --artifacts "{案件名_时间戳.md},{案件名_时间戳.docx}"
 ```
 
 `--kind` 纠正时用 `correct`。若无法执行脚本，须 **`Read`** 已有 `交底书修订对话记录.md`（若无则 **`Write`** 创建），再 **`StrReplace`** 或等价方式在文末**追加**与上表结构相同的一条（时间须真实）。

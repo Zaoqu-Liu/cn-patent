@@ -38,11 +38,11 @@
 Agent **不得**因「只能舒适读取文本」而**遗漏**项目内的 Word / PPT：**必须先转为 Markdown 再纳入扫描**，不能只扫 `.md` 与源码。
 
 1. **发现**：在扫描目录内 **`Glob` 或列举** `*.docx`、`*.pptx`（含子目录，如 `docs/sample_*.docx`）。
-2. **转换（本仓库脚本）**：对每个文件执行（路径按实际替换；`${CLAUDE_SKILL_DIR}` 为技能根）：
+2. **转换（本仓库脚本）**：对每个文件执行（路径按实际替换；`${SKILL_DIR}` 为技能根，即包含 `SKILL.md` 的目录）：
 
    ```bash
-   python3 ${CLAUDE_SKILL_DIR}/tools/docx_to_md.py -i "<路径>/<名>.docx" -o "<同目录或 docs>/<名>.md"
-   python3 ${CLAUDE_SKILL_DIR}/tools/pptx_to_md.py -i "<路径>/<名>.pptx" -o "<同目录或 docs>/<名>.md"
+   python3 ${SKILL_DIR}/tools/docx_to_md.py -i "<路径>/<名>.docx" -o "<同目录或 docs>/<名>.md"
+   python3 ${SKILL_DIR}/tools/pptx_to_md.py -i "<路径>/<名>.pptx" -o "<同目录或 docs>/<名>.md"
    ```
 
    需已 `pip install -r requirements.txt`。输出旁会生成 **`{md 主名}_media/`**，内为嵌入图，**以生成的 `.md` 正文与图片引用为扫描依据**。

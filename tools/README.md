@@ -10,7 +10,7 @@
 | **`cnipa_epub_crawler.py`** | 仅 Playwright 拉取并**默认保存**结果页 HTML；stdout 亦含 **`EPUB_HITS_JSON:`**。 |
 | **`cnipa_epub_parse.py`** | 仅解析已保存的 HTML：`python tools/cnipa_epub_parse.py path/to/_last_result_xxx.html`；字段含标题、公开号、链接、**`abstract`**（若有）。 |
 
-依赖：`pip install -r tools/requirements-cnipa.txt` 与 `python -m playwright install chromium`。环境变量见各脚本文件头。默认结果 HTML 落在 **`tools/_last_result_*.html`**（已 `.gitignore`）。
+依赖：`pip install -r tools/requirements-cnipa.txt` 与 `python -m playwright install chromium`。环境变量见各脚本文件头。`cnipa_epub_search.py` 默认不写 HTML；仅 `cnipa_epub_crawler.py` 会把调试结果 HTML 写到 **`tools/_last_result_*.html`**（已 `.gitignore`）。
 
 抓取失败或解析无命中时，Agent 按 **`prompts/prior_art_search.md`** 降级 **WebSearch**（如 Google 学术 / Google Patents）。
 
@@ -70,8 +70,11 @@ npx -y @mermaid-js/mermaid-cli mmdc -i sample.mmd -o sample.png -b white
 # 写出定稿 .md，并在同目录生成同名 .docx（默认）；-o 须为「案件名_YYYYMMDDHHmmss.md」（见 prompts/disclosure_builder.md §7.3 第 5 点）
 python3 tools/mermaid_render.py -i draft.md -o "一种XXX方法及系统_20260408143025.md"
 
+# 最终交付建议：严格模式，图示或 Word 失败则返回非 0
+python3 tools/mermaid_render.py -i draft.md -o "一种XXX方法及系统_20260408143025.md" --strict
+
 # 指定 .docx 路径（.md 主名仍须含时间戳）
-python3 tools/mermaid_render.py -i draft.md -o out/一种XXX方法及系统_20260408143025.md --docx out/一种XXX方法及系统_20260408143025.docx
+python3 tools/mermaid_render.py -i draft.md -o out/一种XXX方法及系统_20260408143025.md --docx out/一种XXX方法及系统_20260408143025.docx --strict
 
 # 仅 Markdown，不要 Word
 python3 tools/mermaid_render.py -i draft.md -o "一种XXX方法及系统_20260408143025.md" --no-docx
@@ -83,14 +86,14 @@ python3 tools/mermaid_render.py -i draft.md -o "…定稿.md" --mmdc-scale 3 --m
 python3 tools/mermaid_render.py -i draft.md -o out/一种XXX方法及系统_20260408143025.md --assets-dir figures/mermaid
 ```
 
-**Word 生成失败**（缺依赖、版式报错等）时：脚本仍以退出码 **0** 结束（Markdown 已成功）；stderr 会打印 **`md_to_docx.py` 的手动命令**，请复制执行。
+**Word 生成失败**（缺依赖、版式报错等）时：默认脚本仍以退出码 **0** 结束（Markdown 已成功）；stderr 会打印 **`md_to_docx.py` 的手动命令**，请复制执行。最终交付请加 **`--strict`**，此时图示或 Word 失败会返回非 0。
 
 Windows 上若仅装 Node 未执行 `npm install`，脚本会通过 `npx -y @mermaid-js/mermaid-cli mmdc` 调用（首次可能较慢）。
 
 ### 与交底书约定
 
 - 技能要求定稿**同时**交付 **Markdown + Word**，且 **`-o` 主文件名须含 `_{YYYYMMDDHHmmss}`**（`prompts/disclosure_builder.md` §7.3 第 5 点，含首次定稿）；**3.2 系统框图**与 **3.4 流程图**均用 fenced mermaid，**不要** ASCII 文字流程图或框图。
-- 交付代理人前：运行 `mermaid_render.py` 一步即可（默认再调 `md_to_docx.py`）；若 Word 失败，按 stderr 提示手动执行 `md_to_docx.py`。
+- 交付代理人前：运行 `mermaid_render.py --strict` 一步完成并验收（默认再调 `md_to_docx.py`）；若 Word 失败，按 stderr 提示手动执行 `md_to_docx.py`，成功后再交付。
 
 ---
 
@@ -126,7 +129,7 @@ python3 tools/md_to_docx.py -i ./outputs/case/disclosure.md -o ./outputs/case/di
 python3 tools/md_to_docx.py -i a.md -o a.docx --image-max-width-inches 6 --image-max-height-inches 9
 ```
 
-在 Claude Code 中可将 `tools` 换为 `${CLAUDE_SKILL_DIR}/tools`。
+在宿主环境中可将 `tools` 换为 `${SKILL_DIR}/tools`，其中 `${SKILL_DIR}` 为包含 `SKILL.md` 的目录。
 
 ### 支持的 Markdown 子集
 
@@ -200,10 +203,10 @@ python3 tools/docx_to_md.py -i ./raw/spec.docx -o ./knowledge/spec.md --media-di
 ### 局限（mammoth）
 
 - 仅 **`.docx`**（OOXML）；老版 **`.doc`** 不支持。
-- **Markdown 输出在 mammoth 侧标记为 deprecated**，复杂排版可能弱于「先导出 HTML 再转 MD」；专利扫描一般足够。若版式崩坏，建议所内 **另存为 PDF 或纯文本** 再扫。
+- **Markdown 输出能力较基础**，复杂版式可能弱于「先导出 HTML 再转 MD」；专利扫描一般足够。若版式崩坏，建议所内 **另存为 PDF 或纯文本** 再扫。
 - **WMF/EMF** 等 Windows 图元可能需单独处理（见 [mammoth WMF 配方](https://github.com/mwilliamson/python-mammoth)）。
 
-在 Claude Code 中可将 `tools` 换为 `${CLAUDE_SKILL_DIR}/tools`。Windows 无 `python3` 时用 `python`。
+在宿主环境中可将 `tools` 换为 `${SKILL_DIR}/tools`。Windows 无 `python3` 时用 `python`。
 
 ---
 
@@ -240,7 +243,7 @@ python3 tools/pptx_to_md.py -i ./raw/deck.pptx -o ./knowledge/deck.md --media-di
 - **图表、SmartArt、嵌入 OLE** 等若未以普通图片形状存在，**不会**自动栅格化为 PNG；可先在 PowerPoint 中另存为图片或导出 PDF 作补充材料。
 - 文本按形状遍历顺序输出，与视觉阅读顺序可能略有差异。
 
-在 Claude Code 中可将 `tools` 换为 `${CLAUDE_SKILL_DIR}/tools`。Windows 无 `python3` 时用 `python`。
+在宿主环境中可将 `tools` 换为 `${SKILL_DIR}/tools`。Windows 无 `python3` 时用 `python`。
 
 ---
 

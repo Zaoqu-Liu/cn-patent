@@ -1,80 +1,122 @@
-# 安装说明
+# 安装 cn-patent
 
-本技能遵循 [AgentSkills](https://agentskills.io) 常见布局：仓库根目录即技能根目录，内含 `SKILL.md`。
+`cn-patent` 的安装方式很简单：把整个仓库目录放进宿主应用的 `skills/` 目录，并确保 `SKILL.md` 保持在 `cn-patent/` 根部。
+
+## Codex
+
+```bash
+mkdir -p ~/.codex/skills
+git clone https://github.com/Zaoqu-Liu/cn-patent ~/.codex/skills/cn-patent
+```
+
+安装后重启 Codex。
 
 ## Claude Code
 
-在 **git 仓库根目录** 下安装：
+项目内安装：
 
 ```bash
 mkdir -p .claude/skills
-git clone <本仓库 URL> .claude/skills/patent-disclosure-skill
+git clone https://github.com/Zaoqu-Liu/cn-patent .claude/skills/cn-patent
 ```
 
-或使用本地路径复制到 `.claude/skills/patent-disclosure-skill`。
+全局安装：
 
-运行时环境通常会设置 **`CLAUDE_SKILL_DIR`** 指向该技能目录；`SKILL.md` 中的 `${CLAUDE_SKILL_DIR}/prompts/...` 即解析到此路径。
+```bash
+mkdir -p ~/.claude/skills
+git clone https://github.com/Zaoqu-Liu/cn-patent ~/.claude/skills/cn-patent
+```
 
 ## Cursor
 
-Cursor 支持 [Agent Skills](https://www.cursor.com/docs/context/skills) 约定：每个技能是一个**子文件夹**，内含根级 `SKILL.md`（`name` 字段须与文件夹名一致，本仓库为 `patent-disclosure-skill`）。可将**本仓库完整内容**（含 `prompts/`、`tools/` 等）放在下列位置之一，重启 Cursor 后在 **Settings → Rules** 中查看是否已被发现；亦可用 Agent 输入 `/` 后选择技能名。
-
-### 用户主目录（全局，所有项目可用）
-
-| 系统 | 推荐路径 |
-|------|----------|
-| Windows | `%USERPROFILE%\.cursor\skills\patent-disclosure-skill\`（即 `C:\Users\<用户名>\.cursor\skills\patent-disclosure-skill\`） |
-| macOS / Linux | `~/.cursor/skills/patent-disclosure-skill/` |
-
-示例（将仓库克隆到全局技能目录）：
+全局安装：
 
 ```bash
 mkdir -p ~/.cursor/skills
-git clone <本仓库 URL> ~/.cursor/skills/patent-disclosure-skill
+git clone https://github.com/Zaoqu-Liu/cn-patent ~/.cursor/skills/cn-patent
 ```
 
-Windows（PowerShell）：
+Windows PowerShell：
 
 ```powershell
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.cursor\skills"
-git clone <本仓库 URL> "$env:USERPROFILE\.cursor\skills\patent-disclosure-skill"
+git clone https://github.com/Zaoqu-Liu/cn-patent "$env:USERPROFILE\.cursor\skills\cn-patent"
 ```
 
-### 项目目录（仅当前仓库）
+项目内安装路径：
 
-将本技能放在当前工作区下的：
+```text
+<project>/.cursor/skills/cn-patent/
+```
 
-`<项目根>/.cursor/skills/patent-disclosure-skill/`
-
-（同样需包含完整仓库文件树，且 **`SKILL.md` 中 `name: patent-disclosure-skill` 与文件夹名一致**。）
-
-### 与「仅打开文件夹」等价关系
-
-若未使用上述 `skills/` 布局，也可**直接用 Cursor 打开本仓库根目录**作为工作区；此时将 **`CLAUDE_SKILL_DIR`** 理解为「包含 `SKILL.md` 的目录」，prompts 路径为 `./prompts/*.md`，与 `SKILL.md` 示例命令中的 **`${CLAUDE_SKILL_DIR}`** 同义。
-
-为与 Claude Code 迁移一致，Cursor 也会扫描 **`~/.claude/skills/`**、项目内 **`.claude/skills/`** 等路径；详见 Cursor 官方文档与当前版本设置项。
+安装后重启 Cursor；若应用提供技能发现或规则设置入口，可在那里确认 `cn-patent` 是否已被识别。
 
 ## 可选依赖
 
-若仅使用交底书 Markdown 流程，不必安装 Python。
+没有这些依赖时，skill 仍能指导撰写流程；安装后可以更稳定地处理 Office 材料、国知局查新和 Word 交付。
 
-若需使用 **`tools/md_to_docx.py`**（Markdown → Word）、**`tools/docx_to_md.py`**（Word → Markdown + 图片）或 **`tools/pptx_to_md.py`**（PPT → Markdown + 图片，供扫描）：
+### Office 转换与 Word 导出
+
+用于 `.docx` / `.pptx` 材料抽取，以及 Markdown 导出 Word：
 
 ```bash
 pip install -r requirements.txt
 ```
 
-交底书定稿须同时产出 **.md + .docx**，且将 **mermaid**（**3.2 系统框图**与 **3.4 流程图**）经 **`tools/mermaid_render.py`** 转为 PNG 嵌入。**mermaid** 须 **Node.js**：在 **`tools/`** 执行 **`npm install`**（含 **`puppeteer`**）；若 **`mmdc`** 报找不到 Chrome，再执行 **`npx puppeteer browsers install chrome-headless-shell`**。详见 **`tools/README.md`**。
+### 国知局公布公告检索
 
-## 可选：国知局公布公告站抓取（Step 5 查新优先路径）
-
-若需使用 **`tools/cnipa_epub_search.py`**（一步，推荐）或 **`tools/cnipa_epub_crawler.py`** / **`tools/cnipa_epub_parse.py`**（[epub.cnipa.gov.cn](http://epub.cnipa.gov.cn/)，见 `prompts/prior_art_search.md`）：
+用于优先查询国家知识产权局中国专利公布公告站：
 
 ```bash
 pip install -r tools/requirements-cnipa.txt
 python -m playwright install chromium
 ```
 
-**Windows 终端中文**：`cnipa_epub_search.py` / `cnipa_epub_crawler.py` 已对 stdout/stderr 尝试 **UTF-8**（`reconfigure`）。若仍乱码，可在运行前执行 **`chcp 65001`**，或设置环境变量 **`PYTHONUTF8=1`**，以便复制 **`EPUB_HITS_JSON:`** 一行给 Agent 时不误判为失败。
+如果这一路径不可用，工作流会降级到公开网页检索，并在回复中说明降级原因。
 
-与主流程 `requirements.txt` **独立**；未安装时 Step 5 仍可按该 prompt 降级为 **WebSearch**（如 Google 学术）。
+### Mermaid 图示渲染
+
+用于把 fenced mermaid 图渲染成 PNG，再嵌入 Word：
+
+```bash
+cd tools
+npm install
+```
+
+如果 `mmdc` 提示找不到浏览器，可在 `tools/` 下执行：
+
+```bash
+npx puppeteer browsers install chrome-headless-shell
+```
+
+## 本地验证
+
+在仓库根目录执行：
+
+```bash
+python tests/test_skill_contract.py
+python -m py_compile tools/*.py tests/*.py
+python tools/md_to_docx.py -i examples/quickstart-case/expected/minimal-disclosure.md -o /tmp/cn-patent-smoke.docx
+```
+
+Codex 结构校验：
+
+```bash
+python ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py .
+```
+
+安装 Playwright 后，可选跑一次国知局实时链路：
+
+```bash
+CNIPA_EXPECT_HITS=1 python tests/test_cnipa_epub_chain.py 知识图谱
+```
+
+这项依赖官方站点和本机浏览器环境，因此和离线验证命令分开。
+
+## `${SKILL_DIR}` 是什么
+
+本仓库的指令中用 `${SKILL_DIR}` 表示包含 `SKILL.md` 的目录。如果宿主没有自动设置该变量，执行工具命令前可手动设置：
+
+```bash
+export SKILL_DIR="/path/to/cn-patent"
+```

@@ -1,191 +1,188 @@
 <div align="center">
 
-# 中国专利.skill
+# cn-patent
 
-> 从项目文档到**可交付的技术交底书**：专利点挖掘、**查新优先国知局公布公告站**、脱敏成文与自检闭环。
+**面向中国发明专利的 Agent Skill：从项目材料到可交付的技术交底书。**
 
+[![CI](https://github.com/Zaoqu-Liu/cn-patent/actions/workflows/ci.yml/badge.svg)](https://github.com/Zaoqu-Liu/cn-patent/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-mermaid%2Fmmdc-339933.svg)](https://nodejs.org/)
-[![AgentSkills](https://img.shields.io/badge/AgentSkills-Standard-green)](https://agentskills.io)
 
-<br>
-
-有设计文档和代码，但**专利点还没梳**？<br>
-交底书要**系统框图、流程图**，还要**代理人能直接改的 Word**？<br>
-定稿之后还要**多轮补材料、纠错**，并希望**文件修改追溯**？<br>
-国知局公布站检索，期望 **次次爬成功、精准检索**？
-
-**本 Skill 按 AgentSkills 约定编排全流程，`SKILL.md` + `prompts/` 分步可读可迭代。**
-
-[功能特性](#功能特性) · [安装](#安装) · [使用](#使用) · [项目结构](#项目结构) · [示例](#示例) · [运行效果](#运行效果) · [参考文档](#参考文档) · [详细安装说明](INSTALL.md) · [技能入口](SKILL.md)
+![cn-patent hero](docs/assets/cn-patent-hero.png)
 
 </div>
 
----
+`cn-patent` 让代码 Agent 能够阅读项目说明、设计文档、源代码、Word/PPT 材料和已有交底书草稿，完成专利点挖掘、国知局优先查新、技术交底书撰写、图示渲染、Markdown/Word 交付和迭代修订留档。
 
-## 功能特性
+它专注于**中国发明专利技术交底书**，不替代专利代理师。它交付的是结构化技术材料和可复核证据链，便于发明人、研发团队、IP 团队和代理师继续审阅、补充和定稿。
 
-| 能力 | 说明 |
-|------|------|
-| 项目扫描 | 按优先级读文档 / 代码；`.docx` / `.pptx` 先转 Markdown 再扫（见 `prompts/project_scan.md`） |
-| 专利点 | 候选点讨论与融合（`patent_points_analyzer.md`） |
-| 查新 | **优先** [国家知识产权局 · 中国专利公布公告](http://epub.cnipa.gov.cn/)：使用 `tools/cnipa_epub_search.py`精准爬取；异常或无果时降级 **WebSearch**（如 Google 学术 / Patents）。著录与外链写入第一章（`prior_art_search.md`） |
-| 交底书成稿 | 脱敏模版 + **mermaid** 系统框图与流程图；`mermaid_render.py` → PNG，默认再出 **.docx** |
-| 交付命名 | 凡落盘交付：**`{案件名}_{YYYYMMDDHHmmss}.md`** 与同名 **.docx**（`disclosure_builder.md` §7.3） |
-| 自检 | 逻辑闭环、公式与参数一致（`disclosure_self_check.md`，不写入正文） |
-| 迭代 | **合并** / **纠正** 另存新文件；**`交底书修订对话记录.md`** 逐条追加（`iteration_context.md`、`iteration_dialog_log.py`） |
+## 适合什么时候用
 
-**Office 抽取**：`.docx` / `.pptx` 先用本仓库 `docx_to_md.py` / `pptx_to_md.py` 转为 Markdown 再扫描（见 `SKILL.md`）。
+- 把项目材料整理成中文技术交底书。
+- 从代码、架构文档、会议纪要、Word 或 PPT 中挖掘 3-5 个候选专利点。
+- 优先使用国家知识产权局公布公告数据做查新，再用公开网页资料补充。
+- 在扫描前把 `.docx` / `.pptx` 转成 Markdown，减少二进制文档漏读。
+- 生成带时间戳的 `.md` + `.docx` 交底书，并把 mermaid 图渲染成图片。
+- 在已有交底书上合并新材料或纠正事实，同时保留旧稿。
+- 把第五章“技术关键点和欲保护点”收紧到已有技术方案能够支持的范围内。
 
-**Python 依赖（分文件）**：
-- **基础（Office / 交底书转换）**：根目录 [`requirements.txt`](requirements.txt) — `pip install -r requirements.txt`
-- **查新（国知局公布公告站，可选）**：[`tools/requirements-cnipa.txt`](tools/requirements-cnipa.txt) — `pip install -r tools/requirements-cnipa.txt`，再执行 `python -m playwright install chromium`  
-  不装亦可：Step 5 将按 `prior_art_search.md` 仅用 **WebSearch** 降级。详见 [INSTALL.md](INSTALL.md)、[tools/README.md](tools/README.md)。
+## 产出什么
 
----
+| 产物 | 用途 |
+| --- | --- |
+| `案件名_YYYYMMDDHHmmss.md` | 可审阅的 Markdown 交底书，图示已替换为图片引用 |
+| `案件名_YYYYMMDDHHmmss.docx` | 供代理师或内部评审使用的 Word 文档 |
+| `mermaid_figures/*.png` | 由 mermaid 渲染出的系统框图和流程图 |
+| `交底书修订对话记录.md` | 合并/纠错迭代的追加式修订记录 |
+| 第一章 1.1 查新记录 | 带公开来源 URL 的现有技术条目 |
+
+## 工作流
+
+![cn-patent workflow](docs/assets/cn-patent-workflow.png)
+
+1. **立项澄清**：确认项目路径、技术主题、保密边界和联系人占位信息。
+2. **材料扫描**：阅读源材料；遇到 Word/PPT 先转 Markdown 再分析。
+3. **专利点挖掘**：整理候选方向，选择最适合作为一篇交底书的技术方案。
+4. **查新对比**：优先查询国家知识产权局公布公告数据，必要时补充 Google Patents / 学术来源 / 公开网页。
+5. **交底书撰写**：围绕“技术问题 -> 技术方案 -> 技术效果”写成完整文稿。
+6. **图示和 Word**：把 mermaid 图渲染成 PNG，并导出 Word。
+7. **质量自检**：检查充分公开、支持性、章节一致性、参数一致性和来源 URL。
+8. **迭代修订**：补材料或纠错时另存新时间戳文件，不覆盖旧稿。
 
 ## 安装
 
-### Claude Code
-
-> 请在 **git 仓库根目录** 或全局 skills 路径下放置本目录，使 `SKILL.md` 位于技能文件夹根级（与 [INSTALL.md](INSTALL.md) 一致）。
+### Codex
 
 ```bash
-# 示例：安装到当前项目的 skills 目录
+mkdir -p ~/.codex/skills
+git clone https://github.com/Zaoqu-Liu/cn-patent ~/.codex/skills/cn-patent
+```
+
+安装后重启 Codex。
+
+### Claude Code
+
+```bash
 mkdir -p .claude/skills
-git clone <本仓库 URL> .claude/skills/patent-disclosure-skill
+git clone https://github.com/Zaoqu-Liu/cn-patent .claude/skills/cn-patent
 ```
 
 ### Cursor
 
-将本仓库完整内容放到 Cursor 约定的 skills 路径（见 [INSTALL.md](INSTALL.md) 表格），重启后在 **Settings → Rules** 中确认技能已被发现。
+```bash
+mkdir -p ~/.cursor/skills
+git clone https://github.com/Zaoqu-Liu/cn-patent ~/.cursor/skills/cn-patent
+```
 
-### 依赖
+安装后重启宿主应用，让它重新发现 `SKILL.md`。
+
+更完整的安装说明见 [INSTALL.md](INSTALL.md)。
+
+## 可选依赖
+
+按实际需要安装，不必一次装完。
 
 ```bash
-# 基础（Office 转换、交底书相关 Python 包）
+# Word/PPT 转 Markdown，以及 Markdown 导出 Word
 pip install -r requirements.txt
 ```
 
 ```bash
-# 可选：国知局查新（epub.cnipa.gov.cn）
+# 国家知识产权局公布公告检索辅助脚本
 pip install -r tools/requirements-cnipa.txt
 python -m playwright install chromium
 ```
 
-图示定稿另需 **Node.js**；在 `tools/` 下执行 `npm install` 或使用 `npx mmdc`（详见 [tools/README.md](tools/README.md)）。
-
----
-
-## 使用
-
-在 Agent 中用自然语言描述需求即可，例如：
-
-- 专利挖掘、专利点、**技术交底书**、查新、现有技术对比  
-- 斜杠指令（视宿主配置）：如 `/patent-disclosure-skill`、`/交底书`
-
-建议同时说明 **项目路径** 或 **技术主题**（与 `SKILL.md` 中 `argument-hint` 一致）。  
-**查新（Step 5）** 会优先通过 [中国专利公布公告](http://epub.cnipa.gov.cn/) 检索中国专利公开信息，再按需补充其他来源；流程见 `prompts/prior_art_search.md`。  
-在**已有交底书文件**上补充材料或纠错时，无需说「迭代」——技能会按 `merger.md` / `correction_handler.md` 处理；细则见 [SKILL.md](SKILL.md)。
-
----
-
-## 项目结构
-
-本仓库遵循 [AgentSkills](https://agentskills.io)，根目录即一个 skill：
-
+```bash
+# mermaid 图示渲染
+cd tools
+npm install
 ```
-patent-disclosure-skill/
-├── SKILL.md                    # 入口：触发条件、工具表、步骤与 prompts 引用
-├── prompts/                    # 分步模板（Agent Read 后遵循）
-│   ├── intake.md
-│   ├── project_scan.md
-│   ├── patent_points_analyzer.md
-│   ├── prior_art_search.md
-│   ├── disclosure_preview.md
-│   ├── disclosure_builder.md
-│   ├── disclosure_self_check.md
-│   ├── iteration_context.md
-│   ├── merger.md
-│   ├── correction_handler.md
-│   └── template_reference.md
-├── tools/                      # mermaid_render、md_to_docx、docx_to_md、pptx_to_md；国知局 cnipa_epub_*（查新）；iteration_dialog_log 等
-├── docs/                       # PRD、仓库结构说明、运行效果截图（效果例-*.jpg）
-├── examples/                   # 原材料示例（如 example_batch_job_scheduler/knowledge/）
-├── outputs/                    # 用户产出，整目录 .gitignore
+
+如果国知局检索依赖未安装，或官方站点临时不可用，工作流会降级到公开网页检索，并在回复中说明使用了降级路径。
+
+## 第一次怎么试
+
+仓库内置了一个小型虚构案例，不需要上传真实项目代码。
+
+```text
+Use $cn-patent to scan examples/quickstart-case/knowledge and draft a Chinese technical disclosure.
+Keep company/product names generic, run prior-art search if available, and export both Markdown and Word.
+```
+
+真实项目可以这样说：
+
+```text
+Use $cn-patent on /path/to/project. Focus on the scheduling module and generate a Chinese invention disclosure.
+```
+
+已有交底书需要修订时：
+
+```text
+Use $cn-patent to revise outputs/<case>/<draft>.md using this new design note. Save a new timestamped Markdown and Word file; do not overwrite the previous draft.
+```
+
+## 质量门禁
+
+`cn-patent` 对中国发明专利交底书的核心要求比较严格：
+
+- 每个被选中的专利点都要有清晰的**技术问题 -> 技术方案 -> 技术效果**链路。
+- 第一章 1.1 的每条现有技术都要有可核验公开 URL。
+- 第二章的问题要来自第一章的现有技术局限。
+- 第三章要让本领域技术人员能够据此实施。
+- 第四章的优点要能回到第三章的具体技术手段。
+- 第五章的保护点必须由第三章或第六章支持，不能首次引入新事实。
+- 软件、AI、算法和数据处理类主题必须写清具体技术手段和技术效果，不能只写商业规则或展示逻辑。
+
+详细门禁见 [references/cn-patent-quality.md](references/cn-patent-quality.md)。其中已纳入国家知识产权局《专利审查指南》基础文本及 2025 年第 84 号修改决定中已经施行的相关口径。
+
+## 仓库结构
+
+```text
+cn-patent/
+├── SKILL.md
+├── agents/openai.yaml
+├── prompts/
+├── references/
+├── tools/
+├── examples/
+├── docs/assets/
+├── tests/
 ├── requirements.txt
-├── LICENSE
-├── INSTALL.md
-└── .gitignore
+└── INSTALL.md
 ```
 
----
+仓库根目录就是可安装的 skill 根目录。安装到宿主 `skills/` 目录时，请保持 `SKILL.md` 位于 `cn-patent/` 根部。
 
-## 示例
+## 本地验证
 
-虚构扫描原材料见 [examples/README.md](examples/README.md)（如 `examples/example_batch_job_scheduler/knowledge/`）。  
-专利点、查新笔记、交底书等**完整产物**由流程生成到本地 **`outputs/{案件标识}/`**。
+```bash
+python tests/test_skill_contract.py
+python -m py_compile tools/*.py tests/*.py
+python tools/md_to_docx.py -i examples/quickstart-case/expected/minimal-disclosure.md -o /tmp/cn-patent-smoke.docx
+```
 
----
+Codex skill 结构校验：
 
-## 运行效果
+```bash
+python ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py .
+```
 
-**初版生成**（首次落盘交付）
+安装 Playwright 后，可选跑一次国知局实时链路：
 
-![初版生成：outputs 目录下的时间戳交底书、mermaid 图目录等](docs/效果例-初版生成.jpg)
+```bash
+CNIPA_EXPECT_HITS=1 python tests/test_cnipa_epub_chain.py 知识图谱
+```
 
-**迭代更新**（合并/纠正后再交付，多版本并存 + 对话记录）
+这项依赖官方站点和本机浏览器环境，因此不放进 CI。
 
-![迭代更新：新时间戳文件与交底书修订对话记录](docs/效果例-迭代更新.jpg)
+## 真实项目注意事项
 
----
+- 未获授权时，不要把保密代码、商业秘密或客户材料发送到第三方服务。
+- 原始证据材料和生成产物建议分目录存放。
+- 生成交底书是技术撰写材料。申请策略、权利要求定稿、授权前景和侵权风险仍应由合格专利专业人员复核。
 
-## 参考文档
+## License
 
-- [技能入口与 Agent 流程](SKILL.md)（触发条件、`prompts/` 映射、工具表）
-- [详细安装说明](INSTALL.md)（Claude Code / Cursor 路径）
-- [图示与转换脚本](tools/README.md)（mermaid / mmdc、Word 导出、国知局 epub 查新工具）
-- [示例案件与原材料说明](examples/README.md)
-- [产品流程与目录约定](docs/PRD.md)
-- [工程结构说明](docs/skill-structure.md)
-- [交底书模版细则](prompts/template_reference.md)
-
----
-
-## 支持作者
-
-如果这个 Skill 帮您节省了写交底书的时间，可以请我喝杯咖啡☕随缘支持，感谢感谢🙏🙏
-
-<div align="left">
-
-<table>
-<tr>
-<td valign="middle" align="left" style="padding-right: 16px;">
-
-<img src="docs/thanks.jpg" alt="随缘支持" width="280" />
-
-</td>
-<td valign="middle" align="left">
-
-<a href="https://www.star-history.com/?repos=handsomestWei%2Fpatent-disclosure-skill&type=date&legend=top-left">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=handsomestWei/patent-disclosure-skill&type=date&theme=dark&legend=top-left" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=handsomestWei/patent-disclosure-skill&type=date&legend=top-left" />
-    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=handsomestWei/patent-disclosure-skill&type=date&legend=top-left" width="600" />
-  </picture>
-</a>
-
-</td>
-</tr>
-</table>
-
-</div>
-
----
-
-<div align="center">
-
-MIT License © [handsomestWei](https://github.com/handsomestWei/)
-
-</div>
+MIT License. Copyright (c) 2026 Zaoqu Liu.

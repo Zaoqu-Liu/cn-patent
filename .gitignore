@@ -2,6 +2,8 @@
 outputs/
 disclosures/
 *.tmp
+*.swp
+.*.swp
 ~$*
 
 # 国知局抓取结果缓存（tools/）

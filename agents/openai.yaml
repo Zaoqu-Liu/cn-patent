@@ -1,0 +1,4 @@
+interface:
+  display_name: "cn-patent"
+  short_description: "面向中国发明专利的查新、挖掘、交底书生成与迭代修订"
+  default_prompt: "使用 $cn-patent 扫描项目材料，挖掘中国发明专利点，执行查新，并生成技术交底书。"
