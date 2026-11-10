@@ -183,6 +183,10 @@ CNIPA_EXPECT_HITS=1 python tests/test_cnipa_epub_chain.py 知识图谱
 - 原始证据材料和生成产物建议分目录存放。
 - 生成交底书是技术撰写材料。申请策略、权利要求定稿、授权前景和侵权风险仍应由合格专利专业人员复核。
 
+## 致谢与来源
+
+本仓库派生自 [handsomestWei/patent-disclosure-skill](https://github.com/handsomestWei/patent-disclosure-skill)（MIT License），并在其基础上继续修改。感谢原作者的工作。
+
 ## License
 
-MIT License. Copyright (c) 2026 Zaoqu Liu.
+MIT License。保留上游版权声明（Copyright (c) 2026 handsomestWei），并增加本仓库修改部分的版权声明（Copyright (c) 2026 Zaoqu Liu），详见 [LICENSE](LICENSE)。
